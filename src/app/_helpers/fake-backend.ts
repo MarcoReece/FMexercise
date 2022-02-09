@@ -26,13 +26,10 @@ export class FakeBackendInterceptor implements HttpInterceptor {
                 case url.match(/\/users\/\d+$/) && method === 'GET':
                     return getUserById();
                 default:
-                    // pass through any requests not handled above
                     return next.handle(request);
             }
 
         }
-
-        // route functions
 
         function authenticate() {
             const { username, password } = body;
@@ -56,23 +53,21 @@ export class FakeBackendInterceptor implements HttpInterceptor {
         function getUserById() {
             if (!isLoggedIn()) return unauthorized();
 
-            // only admins can access other user records
             if (!isAdmin() && currentUser().id !== idFromUrl()) return unauthorized();
 
             const user = users.find(x => x.id === idFromUrl());
             return ok(user);
         }
 
-        // helper functions
 
         function ok(body) {
             return of(new HttpResponse({ status: 200, body }))
-                .pipe(delay(500)); // delay observable to simulate server api call
+                .pipe(delay(500)); 
         }
 
         function unauthorized() {
             return throwError({ status: 401, error: { message: 'unauthorized' } })
-                .pipe(materialize(), delay(500), dematerialize()); // call materialize and dematerialize to ensure delay even if an error is thrown (https://github.com/Reactive-Extensions/RxJS/issues/648);
+                .pipe(materialize(), delay(500), dematerialize());
         }
 
         function error(message) {
@@ -103,7 +98,6 @@ export class FakeBackendInterceptor implements HttpInterceptor {
 }
 
 export const fakeBackendProvider = {
-    // use fake backend in place of Http service for backend-less development
     provide: HTTP_INTERCEPTORS,
     useClass: FakeBackendInterceptor,
     multi: true
